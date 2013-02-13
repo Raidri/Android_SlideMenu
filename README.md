@@ -84,7 +84,7 @@ The next step is to define the layouts in our SlideMenu class
 	}
 	
 
-Now bind the showSlideMenu and hideSlideMenu method to an button or an other view.
+Now bind the showSlideMenu and hideSlideMenu method to a button or an other view.
 
 If you should slide in from top or bottom then you must set ur FrameLayout to Bottom or Top.
 
