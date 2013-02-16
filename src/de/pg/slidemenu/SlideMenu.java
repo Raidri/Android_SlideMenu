@@ -1,6 +1,9 @@
 package de.pg.slidemenu;
 
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnTouchListener;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.RelativeLayout;
@@ -12,36 +15,43 @@ import android.widget.RelativeLayout.LayoutParams;
  * @author Pascal Geldmacher
  * 
  */
-public class SlideMenu {
+public class SlideMenu implements OnTouchListener {
 
 	public static final int SLIDE_LEFT = 0, SLIDE_RIGHT = 1, SLIDE_TOP = 2,
 			SLIDE_BOTTOM = 3;
+
+	private  int MOVE_FACTOR = 20;
 
 	private boolean STATE_INVISIBLE = true;
 
 	private TranslateAnimation animateOutContent, animateOutMenu;
 	private TranslateAnimation animateInContent, animateInMenu;
 
+	private TranslateAnimation moveAnimation;
+
 	private View slideInView;
 	private View slideOutView;
 
-	private long duration = 100;
+	private long duration = 200;
+
+	private int previousPosition, position = 0;
+	private float previousTouchRegion = 0.0f;
 
 	private int slideOrientation = SLIDE_LEFT;
 
-	public SlideMenu() {
+	private RelativeLayout.LayoutParams params = null;
 
+	public SlideMenu() {
 	}
 
 	public SlideMenu(View slideIn, View slideOut) throws Exception {
-
 		if (slideIn == null || slideOut == null) {
 			throw new Exception("The slideIn and slideOut view must be set");
 		}
 		this.slideInView = slideIn;
-
 		this.slideOutView = slideOut;
-		this.createAnimation();
+
+		this.init();
 	}
 
 	public SlideMenu(View slideIn, View slideOut, long duration)
@@ -52,7 +62,12 @@ public class SlideMenu {
 
 		this.slideInView = slideIn;
 		this.slideOutView = slideOut;
+
+		this.slideOutView.setOnTouchListener(this);
+
 		this.duration = duration;
+
+		this.init();
 	}
 
 	public SlideMenu(View slideIn, View slideOut, int slideOrientation)
@@ -64,6 +79,8 @@ public class SlideMenu {
 		this.slideInView = slideIn;
 		this.slideOutView = slideOut;
 		this.slideOrientation = slideOrientation;
+
+		this.init();
 	}
 
 	public SlideMenu(View slideIn, View slideOut, long duration,
@@ -76,6 +93,24 @@ public class SlideMenu {
 		this.slideOutView = slideOut;
 		this.duration = duration;
 		this.slideOrientation = slideOrientation;
+
+		this.init();
+	}
+
+	private void init() {
+		this.createAnimation();
+		this.slideOutView.setOnTouchListener(this);
+
+		params = (LayoutParams) slideOutView.getLayoutParams();
+		LayoutParams slideInParams = (LayoutParams) slideInView
+				.getLayoutParams();
+	}
+	
+	private void resetStates(){
+		position = 0;
+		previousPosition = 0;
+		MOVE_FACTOR = 20;
+		previousTouchRegion = 0;
 	}
 
 	public void setDuration(long duration) {
@@ -144,7 +179,7 @@ public class SlideMenu {
 		if (slideOrientation == SLIDE_LEFT) {
 			/** SLIDE IN ANIMATION **/
 
-			int moveRight = slideInView.getRight();
+			int moveRight = slideInView.getRight() / 2;
 
 			animateInMenu = new TranslateAnimation(-moveRight, 0, 0, 0);
 			animateInMenu.setDuration(duration);
@@ -163,7 +198,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -182,7 +217,7 @@ public class SlideMenu {
 							slideOutView.setLayoutParams(params);
 
 							STATE_INVISIBLE = false;
-
+							slideOutView.setEnabled(true);
 						}
 					});
 
@@ -190,7 +225,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -205,15 +240,16 @@ public class SlideMenu {
 							params.setMargins(0, params.topMargin, 0,
 									params.bottomMargin);
 							slideOutView.setLayoutParams(params);
-
+							resetStates();
 							STATE_INVISIBLE = true;
+							slideOutView.setEnabled(true);
 
 						}
 					});
 		} else if (slideOrientation == SLIDE_RIGHT) {
 			/** SLIDE IN ANIMATION **/
 
-			int moveLeft = slideInView.getWidth();
+			int moveLeft = slideInView.getWidth() / 2;
 
 			animateInMenu = new TranslateAnimation(
 					(slideInView.getRight() - moveLeft), 0, 0, 0);
@@ -233,7 +269,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -252,6 +288,7 @@ public class SlideMenu {
 							slideOutView.setLayoutParams(params);
 
 							STATE_INVISIBLE = false;
+							slideOutView.setEnabled(true);
 
 						}
 					});
@@ -260,7 +297,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -275,15 +312,16 @@ public class SlideMenu {
 							params.setMargins(0, params.topMargin, 0,
 									params.bottomMargin);
 							slideOutView.setLayoutParams(params);
-
+							resetStates();
 							STATE_INVISIBLE = true;
+							slideOutView.setEnabled(true);
 
 						}
 					});
 
 		} else if (slideOrientation == SLIDE_TOP) {
 			/** SLIDE IN ANIMATION **/
-			int moveTop = slideInView.getHeight();
+			int moveTop = slideInView.getHeight() / 2;
 
 			animateInMenu = new TranslateAnimation(0, 0, -moveTop, 0);
 			animateInMenu.setDuration(duration);
@@ -302,7 +340,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -322,7 +360,7 @@ public class SlideMenu {
 							slideOutView.setLayoutParams(params);
 
 							STATE_INVISIBLE = false;
-
+							slideOutView.setEnabled(true);
 						}
 					});
 
@@ -330,7 +368,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -347,14 +385,15 @@ public class SlideMenu {
 							params.setMargins(params.leftMargin, 0,
 									params.rightMargin, 0);
 							slideOutView.setLayoutParams(params);
-
+							resetStates();
 							STATE_INVISIBLE = true;
+							slideOutView.setEnabled(true);
 
 						}
 					});
 		} else if (slideOrientation == SLIDE_BOTTOM) {
 			/** SLIDE IN ANIMATION **/
-			int moveBottom = slideInView.getHeight();
+			int moveBottom = slideInView.getHeight() / 2;
 
 			animateInMenu = new TranslateAnimation(0, 0,
 					(slideInView.getBottom() - moveBottom), 0);
@@ -374,7 +413,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -393,6 +432,7 @@ public class SlideMenu {
 							slideOutView.setLayoutParams(params);
 
 							STATE_INVISIBLE = false;
+							slideOutView.setEnabled(true);
 
 						}
 					});
@@ -401,7 +441,7 @@ public class SlideMenu {
 					.setAnimationListener(new Animation.AnimationListener() {
 
 						public void onAnimationStart(Animation animation) {
-
+							slideOutView.setEnabled(false);
 						}
 
 						public void onAnimationRepeat(Animation animation) {
@@ -416,12 +456,137 @@ public class SlideMenu {
 							params.setMargins(params.leftMargin, 0,
 									params.rightMargin, 0);
 							slideOutView.setLayoutParams(params);
-
+							resetStates();
 							STATE_INVISIBLE = true;
-
+							slideOutView.setEnabled(true);
 						}
 					});
 		}
 	}
 
+	public boolean onTouch(View v, MotionEvent event) {
+		int action = event.getAction();
+		float rawX = event.getRawX();
+		float rawY = event.getRawY();
+		if (action == MotionEvent.ACTION_MOVE) {
+
+			if (slideOrientation == SLIDE_LEFT) {
+				
+				if(previousTouchRegion > 0){
+					MOVE_FACTOR = (int)(rawX - previousTouchRegion);
+				}
+				
+				previousPosition = position;
+			
+				position += MOVE_FACTOR;
+				
+				Log.d("", "Position: "+params.leftMargin+" "+ slideInView.getWidth());
+				if (position < 0) {
+					position = 0;
+				} else if (params.leftMargin > slideInView.getWidth()) {
+					position = slideInView.getWidth();
+				}
+				previousTouchRegion = rawX;
+
+				params.setMargins(position, 0, -position, 0);
+				slideOutView.setLayoutParams(params);
+
+			} else if (slideOrientation == SLIDE_RIGHT) {
+
+			} else if (slideOrientation == SLIDE_TOP) {
+
+			} else if (slideOrientation == SLIDE_BOTTOM) {
+
+			}
+
+			//slideOutView.startAnimation(moveAnimation);
+
+		} else if (action == MotionEvent.ACTION_UP && position > 0) {
+			
+			if(rawX > position && !STATE_INVISIBLE){
+				return false;
+			}
+			float visibleWidthScope = (slideOutView.getResources().getDisplayMetrics().densityDpi / 2.0f);
+
+			if (slideOrientation == SLIDE_LEFT) {
+				
+				if (position >= visibleWidthScope) {
+					moveAnimation = new TranslateAnimation(0,
+							(slideInView.getWidth()-previousPosition), 0, 0);
+					//moveAnimation.setFillAfter(true);
+					moveAnimation.setDuration(duration);
+					moveAnimation
+							.setAnimationListener(new Animation.AnimationListener() {
+
+								@Override
+								public void onAnimationStart(Animation animation) {
+							
+								}
+
+								@Override
+								public void onAnimationRepeat(
+										Animation animation) {
+									// TODO Auto-generated method stub
+
+								}
+
+								@Override
+								public void onAnimationEnd(Animation animation) {
+									slideOutView.clearAnimation();
+									params.setMargins(slideInView.getWidth(), 0, -slideInView.getWidth(), 0);
+									slideOutView.setLayoutParams(params);
+									position = slideInView.getWidth();
+									previousPosition = slideInView.getWidth();
+									MOVE_FACTOR = 20;
+									STATE_INVISIBLE = false;
+								}
+							});
+				} else {
+					Log.d("", "PreviousPosition: "+previousPosition);
+					moveAnimation = new TranslateAnimation(previousPosition, -previousPosition , 0, 0);
+					//moveAnimation.setFillAfter(true);
+					moveAnimation.setDuration(duration);
+					moveAnimation
+							.setAnimationListener(new Animation.AnimationListener() {
+
+								@Override
+								public void onAnimationStart(Animation animation) {
+
+								}
+
+								@Override
+								public void onAnimationRepeat(
+										Animation animation) {
+									// TODO Auto-generated method stub
+
+								}
+
+								@Override
+								public void onAnimationEnd(Animation animation) {
+									slideOutView.clearAnimation();
+									params.setMargins(0, 0, 0, 0);
+									slideOutView.setLayoutParams(params);
+									resetStates();
+									STATE_INVISIBLE = true;
+								}
+							});
+				}
+
+				slideOutView.startAnimation(moveAnimation);
+				
+				return true;
+
+			} else if (slideOrientation == SLIDE_RIGHT) {
+
+			} else if (slideOrientation == SLIDE_TOP) {
+
+			} else if (slideOrientation == SLIDE_BOTTOM) {
+
+			}
+
+		}
+
+		return false;
+	}
+	
 }
